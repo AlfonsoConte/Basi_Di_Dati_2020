@@ -1,0 +1,19 @@
+delete from COVID where denominazione_provincia='In fase di definizione/aggiornamento';
+
+update COVID set codice_regione=99 where denominazione_regione='P.A. Trento';
+update COVID set codice_regione=98 where denominazione_regione='P.A. Bolzano';
+
+insert into REGIONI 
+select distinct codice_regione, denominazione_regione, stato 
+from COVID
+order by codice_regione;
+
+insert into PROVINCE
+select distinct codice_provincia, denominazione_provincia, sigla_provincia, latitudine, longitudine, codice_regione
+from COVID
+order by codice_provincia;
+
+insert into COVID_PROVINCE
+select distinct data, codice_provincia, totale_casi, note_it, note_en
+from COVID
+order by data;

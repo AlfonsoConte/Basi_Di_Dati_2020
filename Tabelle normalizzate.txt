@@ -1,0 +1,49 @@
+create table REGIONI(
+codice_regione NUMBER(2),
+denominazione_regione VARCHAR2(200),
+stato CHAR(3),
+constraint PK_REGIONI primary key(codice_regione)
+)
+
+create table PROVINCE(
+codice_provincia NUMBER(3) NOT NULL,
+denominazione_provincia VARCHAR2(200),
+sigla_provincia CHAR(2),
+latitudine NUMBER,
+longitudine NUMBER,
+codice_regione NUMBER(2),
+constraint PK_PROVINCE primary key(codice_provincia)
+)
+
+create table COVID_PROVINCE(
+data DATE,
+codice_provincia NUMBER(3) NOT NULL,
+totale_casi INTEGER,
+note_it CLOB,         
+note_en CLOB,
+constraint PK_COVID_PROVINCE primary key(data,codice_provincia)
+)
+
+alter table COVID_PROVINCE
+add constraint FK_COVIDPROV_PROVINCE
+foreign key (codice_provincia) references PROVINCE(codice_provincia);
+
+alter table PROVINCE
+add constraint FK_PROVINCE_REGIONI
+foreign key (codice_regione) references REGIONI(codice_regione);
+
+create table COVID_REGIONI(
+DATA DATE,
+CODICE_REGIONE number(2) not null,
+TOTALE_CASI integer,
+constraint PK_COVID_REGIONE primary key(data,codice_regione)
+)
+
+alter table COVID_REGIONI
+add constraint FK_COVIDREG_REGIONE
+foreign key (codice_regione) references REGIONI(codice_regione);
+
+
+
+
+

@@ -1,0 +1,79 @@
+
+
+-- Per ogni regione si visualizzi il numero di RSA e la percentuale di contagiati
+select r.denominazione_regione, r.rsa, cr.totale_casi
+from covid_regioni cr join regioni r on cr.codice_regione=r.codice_regione
+where cr.data=(select max(cr1.data) from covid_regioni cr1)
+order by r.rsa
+
+
+--Contagiati per regione (dato più recente)
+select r.denominazione_regione, cr.totale_casi
+from covid_regioni cr join regioni r on cr.codice_regione=r.codice_regione
+where cr.data=(select max(cr1.data) from covid_regioni cr1)
+
+
+-- Per ogni provincia si visualizzi la densità abitativa e la percentuale di contagiati
+select p.denominazione_provincia, p.popolazione/p.estensione_territoriale as Densità_Abitativa , cp.totale_casi
+from covid_province cp join province p on cp.codice_provincia=p.codice_provincia
+where cp.data=(select max(cp1.data) from covid_province cp1)
+order by p.popolazione/p.estensione_territoriale
+
+
+-- Per ogni regione si visualizzi l'utilizzo dei trasporti pubblici in relazione allo scoppio della pandemia
+select r.denominazione_regione, (r.trasporto_pubblico/r.popolazione)*100 as Percentuale_Pendolari , cr.totale_casi
+from covid_regioni cr join regioni r on cr.codice_regione=r.codice_regione
+where cr.data='24-Mar-2020'
+order by (r.trasporto_pubblico/r.popolazione)*100
+
+
+--In base al numero di morti, determinare la regione più colpita dall'epidemia
+select r.denominazione_regione, (cr.deceduti/r.popolazione)*1000000 as Deceduti_per_milione_Abitanti
+from covid_regioni cr join regioni r on cr.codice_regione=r.codice_regione
+where (cr.deceduti/r.popolazione)*1000000 = (select max (cr.deceduti/r.popolazione)*1000000
+                                            from covid_regioni cr join regioni r on cr.codice_regione=r.codice_regione)
+--                                          
+select r.denominazione_regione, (cr.deceduti/r.popolazione)*1000000 as Deceduti_per_milione_Abitanti
+from covid_regioni cr join regioni r on cr.codice_regione=r.codice_regione
+where cr.data=(select max(cr1.data) from covid_regioni cr1)
+order by (cr.deceduti/r.popolazione)*1000000
+
+--Visualizzare il tasso di mortalità per ogni regione
+select r.denominazione_regione, (cr.deceduti/(cr.deceduti+cr.dimessi_guariti))*100 as Tasso_di_Mortalità
+from covid_regioni cr join regioni r on cr.codice_regione=r.codice_regione
+where cr.data=(select max(cr1.data) from covid_regioni cr1)
+order by (cr.deceduti/(cr.deceduti+cr.dimessi_guariti))*100
+
+
+--Visualizzare il numero di casi attivi in Italia per ogni giorno
+select data,sum(totale_casi-dimessi_guariti-deceduti) as Casi_Attivi_Italia
+from COVID_REGIONI 
+group by data
+order by data
+--Visualizzare i Ricorsi al Pronto Soccorso in relazione ai casi totali per regione all'inizio del lockdown
+select r.denominazione_regione,r.ricorsi_ps,cr.totale_casi
+from covid_regioni cr join regioni r on cr.codice_regione=r.codice_regione
+where cr.data='24-Mar-2020'
+order by r.ricorsi_ps            
+
+
+--CURVA POSITIVI IN ITALIA
+select data,sum(nuovi_positivi) as Positivi
+from incrementi_giornalieri
+group by data
+order by data   
+
+
+
+--VISUALIZZARE LE REGIONI E LA DATA IN CUI AVREBBERO SUPERATO IL NUMERO DI POSTI IN T.I. 
+select denominazione_regione,min(cr.data) as DATA
+from covid_regioni cr join regioni r on cr.codice_Regione=r.codice_regione
+where cr.Terapia_intensiva>r.Posti_TI
+group by r.denominazione_Regione
+
+
+--PERCENTUALE POSITIVI IN ITALIA(ANDAMENTO)
+select data, sum(nuovi_positivi)/sum(tamponi)*100 as  Rapporto_percentuale_Positivi
+from incrementi_giornalieri
+group by data
+order by data

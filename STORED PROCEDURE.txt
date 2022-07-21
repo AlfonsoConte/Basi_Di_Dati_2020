@@ -1,0 +1,66 @@
+create or replace procedure CASI_ATTIVI(
+nome_regione IN REGIONI.DENOMINAZIONE_REGIONE%TYPE,
+giorno IN covid_regioni.data%TYPE)
+AS
+BEGIN 
+DECLARE
+  Attivi Covid_regioni.totale_casi%TYPE;
+ 
+
+ BEGIN 
+  select totale_casi - deceduti- dimessi_guariti as Casi_Attivi into Attivi
+  from covid_regioni cr join regioni r on cr.codice_Regione=r.codice_regione
+  where r.denominazione_regione=nome_regione and data=giorno;
+  dbms_output.put_line('Il numero di casi attivi il giorno ' || giorno || ' è ' ||Attivi);
+  END;
+END CASI_ATTIVI;
+
+
+
+--Picco casi attivi regionali
+
+Create or replace procedure Picco_Attivi(
+Regione IN  regioni.denominazione_regione%type)
+AS
+BEGIN
+   DECLARE
+   picco covid_regioni.totale_casi%type;
+BEGIN
+   select max(cr.totale_casi-cr.dimessi_guariti-cr.deceduti) into picco
+   from covid_regioni cr join regioni  r on cr.codice_regione=r.codice_regione
+   group by r.denominazione_regione
+   having r.denominazione_regione=Regione;
+   DBMS_OUTPUT.PUT_LINE('Il picco di Casi Attivi per la regione '|| Regione ||' è '|| picco );
+END;
+END Picco_Attivi;
+
+
+
+CREATE OR REPLACE PROCEDURE PULIZIA_DATI
+AS
+BEGIN
+    delete from COVID where denominazione_provincia='In fase di definizione/aggiornamento';
+    
+END;
+
+
+CREATE OR REPLACE PROCEDURE Positivi_E_Tamponi (
+GIORNO IN Incrementi_Giornalieri.data%TYPE)
+AS
+BEGIN
+  DECLARE 
+  Tamp Incrementi_Giornalieri.tamponi%TYPE;
+  Pos Incrementi_Giornalieri.Nuovi_Positivi%TYPE;
+  Regione Incrementi_Giornalieri.Denominazione_regione%TYPE;
+  CURSOR cur IS SELECT tamponi,Nuovi_Positivi,denominazione_Regione from Incrementi_giornalieri where data=GIORNO;
+  BEGIN 
+    OPEN cur;
+    LOOP
+       FETCH cur into Tamp,Pos,Regione;
+       EXIT when cur%NOTFOUND;
+       DBMS_OUTPUT.PUT_LINE('Regione : ' || REGIONE|| ' Tamponi : '|| Tamp || '  Positivi : ' || Pos);
+    END LOOP;
+       CLOSE cur;
+       COMMIT;
+  END;
+END;

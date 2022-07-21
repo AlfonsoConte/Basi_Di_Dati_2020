@@ -1,0 +1,29 @@
+CREATE MATERIALIZED VIEW INCREMENTI_GIORNALIERI
+AS
+select cr.data, r.denominazione_regione, cr.totale_casi - (select cr1.totale_casi from covid_regioni cr1 join regioni r1 on cr1.codice_regione=r1.codice_regione where cr1.data=cr.data-1 and r1.denominazione_regione=r.denominazione_regione) as Nuovi_Positivi,
+cr.Terapia_intensiva - (select cr1.Terapia_intensiva from covid_regioni cr1 join regioni r1 on cr1.codice_regione=r1.codice_regione where cr1.data=cr.data-1 and r1.denominazione_regione=r.denominazione_regione) as Terapia_Intensiva,
+cr.Totale_Ospedalizzati - (select cr1.Totale_Ospedalizzati from covid_regioni cr1 join regioni r1 on cr1.codice_regione=r1.codice_regione where cr1.data=cr.data-1 and r1.denominazione_regione=r.denominazione_regione) as Ospedalizzati,
+cr.Dimessi_Guariti - (select cr1.dimessi_guariti from covid_regioni cr1 join regioni r1 on cr1.codice_regione=r1.codice_regione where cr1.data=cr.data-1 and r1.denominazione_regione=r.denominazione_regione) as Dimessi_Guariti,
+cr.Deceduti - (select cr1.deceduti from covid_regioni cr1 join regioni r1 on cr1.codice_regione=r1.codice_regione where cr1.data=cr.data-1 and r1.denominazione_regione=r.denominazione_regione) as Deceduti,
+cr.Tamponi - (select cr1.Tamponi from covid_regioni cr1 join regioni r1 on cr1.codice_regione=r1.codice_regione where cr1.data=cr.data-1 and r1.denominazione_regione=r.denominazione_regione) as Tamponi
+from covid_regioni cr join regioni r on cr.codice_regione=r.codice_regione
+where data>'25-Feb-2020'
+order by cr.data
+
+
+
+
+CREATE MATERIALIZED VIEW Vista_Regioni
+AS 
+Select r.denominazione_regione,cr.totale_casi, cr.Terapia_intensiva , cr.Totale_ospedalizzati , cr.Dimessi_guariti , cr.Deceduti,cr.Tamponi , r.Fumatori, r.Ricorsi_Ps  ,r.RSA , r.Trasporto_Pubblico ,r.Popolazione
+from covid_regioni cr join regioni r on cr.codice_regione=r.codice_regione 
+where cr.data= (select max(cr1.data) from Covid_regioni cr1)
+
+
+
+CREATE MATERIALIZED VIEW Vista_Province
+AS 
+select p.denominazione_provincia,cp.totale_casi, ROUND(p.popolazione/p.estensione_territoriale,2) as Densità_Abitativa,
+       p.trasporto_pubblico,p.inquinamento_aria_pm10,cp.data as Data_Più_Recente
+from covid_province cp join province p on cp.codice_provincia=p.codice_provincia
+where cp.data = (select MAX(cp1.data) from covid_province cp1 where cp1.codice_provincia=cp.codice_provincia)

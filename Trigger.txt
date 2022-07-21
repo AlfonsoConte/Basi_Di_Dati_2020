@@ -1,0 +1,172 @@
+create or replace trigger insert_covid
+after insert on COVID
+for each row
+DECLARE
+    num_province INTEGER;
+    num_insert INTEGER;
+BEGIN
+    insert into covid_province values(:new.data,:new.codice_provincia,:new.totale_casi,:new.note_it,:new.note_en);
+    num_province := (select count(*) from province where codice_regione=:new.codice_regione);
+    num_insert := (select count(*) from covid_province cp join province p on cp.codice_provincia=p.codice_provincia  where p.codice_regione=:new.codice_regione and data=:new.data);
+    IF num_province=num_insert THEN
+        insert into covid_regioni(data,codice_regione,totale_casi)
+            select cp.data, p.codice_regione, sum(cp.totale_casi) as TOTALE_CASI
+            from covid_province cp join province p on cp.codice_provincia=p.codice_provincia
+            group by  cp.data, p.codice_regione
+            having codice_regione=:new.codice_regione and data=:new.data
+    END IF;
+END;
+    
+select count(*)
+from covid_province cp join province p on cp.codice_provincia=p.codice_provincia 
+where p.codice_regione=3 and data='22-Apr-2020'
+
+select count(*)
+from province
+where codice_regione=3
+
+select cp.data, p.codice_regione, sum(cp.totale_casi) as TOTALE_CASI
+from covid_province cp join province p on cp.codice_provincia=p.codice_provincia
+group by  cp.data, p.codice_regione
+having codice_regione=3 and data='22-Apr-2020'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+create or replace trigger insert_covid
+after insert on COVID
+for each row
+DECLARE
+    num_province INTEGER;
+    num_insert INTEGER;
+BEGIN
+    insert into covid_province values(:new.data,:new.codice_provincia,:new.totale_casi,:new.note_it,:new.note_en);
+    select count(*) into num_province 
+    from province 
+    where codice_regione=:new.codice_regione;
+    select count(*) into num_insert
+    from covid_province cp join province p on cp.codice_provincia=p.codice_provincia
+    where p.codice_regione=:new.codice_regione and data=:new.data;
+    IF num_province=num_insert THEN
+        insert into covid_regioni(data,codice_regione,totale_casi)
+            select cp.data, p.codice_regione, sum(cp.totale_casi) as TOTALE_CASI
+            from covid_province cp join province p on cp.codice_provincia=p.codice_provincia
+            group by cp.data, p.codice_regione
+            having codice_regione=:new.codice_regione and data=:new.data;
+    END IF;
+END;
+
+
+			TEST:
+
+INSERT INTO COVID VALUES ('23-Apr-2020','ITA',15,'Campania',064,'Avellino','AV',40.91404699,14.79528803,1,NULL,NULL);
+INSERT INTO COVID VALUES ('23-Apr-2020','ITA',15,'Campania',062,'Benevento','BN',41.12969987,14.78151683,2,NULL,NULL);
+INSERT INTO COVID VALUES ('23-Apr-2020','ITA',15,'Campania',061,'Caserta','CE',41.07465878,14.33240464,3,NULL,NULL);
+INSERT INTO COVID VALUES ('23-Apr-2020','ITA',15,'Campania',063,'Napoli','NA',40.83956555,14.25084984,4,NULL,NULL);
+INSERT INTO COVID VALUES ('23-Apr-2020','ITA',15,'Campania',065,'Salerno','SA',40.67821961,14.7594026,5,NULL,NULL);
+
+select * from covid where data='23-Apr-2020'
+select * from covid_province where data='23-Apr-2020'
+select * from covid_regioni where data='23-Apr-2020' and codice_regione=15
+
+delete from covid where data='23-Apr-2020'
+delete from covid_province where data='23-Apr-2020'
+delete from covid_regioni where data='23-Apr-2020'
+
+
+
+
+
+CREATE OR REPLACE TRIGGER Popolamento
+AFTER INSERT 
+ON COVID
+FOR EACH ROW
+DECLARE
+    i integer;
+BEGIN
+
+--INSERIMENTO REGIONE
+
+    SELECT COUNT(*) INTO i
+    FROM REGIONI
+    WHERE Codice_Regione = :new.Codice_Regione;
+
+    IF i=0 THEN
+        INSERT INTO REGIONI(codice_regione,denominazione_regione,Stato)
+        VALUES
+        ( :new.Codice_Regione,
+        :new.Denominazione_Regione,
+        :new.Stato);
+    END IF;
+
+--INSERMENTO PROVINCE
+
+    SELECT COUNT(*) INTO i
+    FROM PROVINCE
+    WHERE Codice_Provincia = :new.Codice_Provincia;
+
+    IF i=0 THEN
+        INSERT INTO PROVINCE(codice_provincia,Denominazione_provincia,sigla_provincia,latitudine,longitudine,codice_regione)
+        VALUES
+        ( :new.Codice_Provincia,
+        :new.Denominazione_Provincia,
+        :new.Sigla_Provincia,
+        :new.Latitudine,
+        :new.Longitudine,
+        :new.Codice_Regione);
+    END IF;
+END;
+
+create or replace trigger CORREZIONE_DATI
+before insert on COVID
+for each row
+BEGIN
+    IF :new.denominazione_regione='P.A. Trento' THEN
+        :new.codice_regione:=99;
+    END IF;
+    IF :new.denominazione_regione='P.A. Bolzano' THEN
+        :new.codice_regione:=98;
+    END IF;
+END;
+
+
+
+
+CREATE OR REPLACE TRIGGER INCR_GIORN 
+AFTER INSERT ON COVID_REGIONI
+FOR EACH ROW 
+DECLARE
+   incremento Incrementi_Giornalieri.nuovi_positivi%type;
+   nome_regione Incrementi_giornalieri.denominazione_regione%type;
+   condizione integer;
+BEGIN
+   select count(*) into condizione from covid_regioni where codice_regione =:new.codice_Regione and data=:new.data-1;
+   IF CONDIZIONE=1  THEN 
+    select denominazione_regione into nome_regione
+    from REGIONI
+    where codice_regione=:new.codice_regione;
+    select :new.totale_casi- totale_casi into incremento 
+    from covid_regioni
+    where data=:new.data-1;
+    insert into incrementi_giornalieri values(:new.data,nome_regione,incremento,null,null,null);
+    END IF;
+END;
+
+
